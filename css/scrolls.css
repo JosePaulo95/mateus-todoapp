@@ -1,0 +1,47 @@
+.horizontally-scrollable {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.horizontally-scrollable.active {
+  cursor: grabbing;
+  cursor: -webkit-grabbing;
+}
+
+/*
+Personaliza todos os scrolls da página
+*/
+::-webkit-scrollbar-track
+{
+  -webkit-box-shadow: 0 0 rgba(0,0,0,0.2);
+  border-radius: 10px;
+  background-color: #F5F5F5;
+}
+
+::-webkit-scrollbar
+{
+  width: 12px;
+  background-color: #F5F5F5;
+}
+
+::-webkit-scrollbar-thumb
+{
+  border-radius: 10px;
+  -webkit-box-shadow: 0 0 rgba(0,0,0,.2);
+  background-color: rgba(0,0,0,.1);
+}
+
+/*classes dos cards*/
+.scrolls-main-container{
+   height: 82vh
+}
+
+.scrolls-full-height{
+   height: 100%
+ }
+
+.scrolls-limited-y{
+   overflow-y: auto;
+   height: auto;
+   min-height: 0vh;
+   max-height: 70vh;
+}

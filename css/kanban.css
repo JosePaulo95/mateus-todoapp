@@ -1,0 +1,36 @@
+/* código do template kanban do Bulma */
+
+#sectioncontainer {
+  margin-top: 20px;
+}
+
+.cards-container {
+  max-width: 95%;
+}
+
+.board-item {
+  margin: 5px 0;
+  will-change: transform;
+}
+
+/* Alteração pros cards não crescerem pros lados */
+.card-text{
+  width: 250px;
+  overflow-wrap: break-word;
+}
+.board-item-content {
+  position: relative;
+  padding: 20px;
+  background: #fff;
+  border-radius: 4px;
+  font-size: 17px;
+  text-align: left;
+  cursor: pointer;
+  -webkit-box-shadow: 0px 1px 3px 0 rgba(0,0,0,0.2);
+  box-shadow: 0px 1px 3px 0 rgba(0,0,0,0.2);
+  margin: 5px;
+}
+
+.delete {
+  pointer-events: auto;
+}

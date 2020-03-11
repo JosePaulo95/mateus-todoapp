@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0">
+    <title>Kanban desafio mateus - José Paulo</title>
+    <!-- Bulma Version 0.8.x-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/js/all.min.js" integrity="sha256-MAgcygDRahs+F/Nk5Vz387whB4kSK9NXlDN3w58LLq0=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
+    <link rel="stylesheet" href="css/kanban.css">
+    <link rel="stylesheet" href="css/scrolls.css">
+    <link rel="stylesheet" href="https://unpkg.com/bulma-modal-fx/dist/css/modal-fx.min.css" />
+    <link rel="stylesheet" href="plugins/bulma-tooltip/bulma-tooltip.min.css">
+    
+  </head>
+  <body>
+
+    <!-- div "app" eh main root para o vue -->
+
+    <div id="app" style=" background-color: cornflowerblue">
+
+      <!-- 
+        << INICIO NAVBAR
+      -->
+
+      <nav class="navbar has-shadow is-danger">
+        <div class="navbar-menu is-active">
+          <div class="navbar-start">
+            <a class="navbar-item title is-5">
+              <i class="fa fa-flag-checkered" /></i>&nbsp TodoApp
+            </a>
+          </div>
+          <div class="navbar-end">
+            <div class="navbar-item">
+              <div class="control has-icons-left has-icons-right search-field">
+                <input class="input" type="text" placeholder="Busca por tarefas" v-model="search" />
+                <span class="icon is-left">
+                  <i class="fa fa-search"></i>
+                </span>
+                <span class="icon is-right">
+                  <i class="delete clear-search" @click="clearSearchField()" v-if="search.length"></i>
+                </span>
+                <p class="help">Digite pelo menos 3 caracteres</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!--
+        FIM NAVBAR >>
+      -->
+
+
+      <!-- main section -->
+      <section class="container cards-container scrolls-main-container">
+        <div class="horizontally-scrollable columns is-mobile scrolls-full-height" id="sectioncontainer">
+
+          <!-- cada coluna da bulma é um projeto. Caso haja algo em search, projetos sem tarefas não aparecem 
+            << INICIO LOOP PROJETOS
+          -->
+          <div class="column is-narrow" v-for="projeto in projetosFiltradosOrdenados" v-if="projeto.items.length || search.length === 0">
+            <article class="message" :class="'is-' + projeto.cardColor">
+              <div class="message-header">
+                <!-- Dentro do loop a header usas as propriedade 'titulo' e 'previsao' de cada projeto -->
+                <p class="card-text">
+                  {{  projeto.name }}
+                  <br>
+                  <span style="font-size: 12px;">
+                    Previsão de entrega: {{projeto.dt_previsao_br}}
+                  </span>
+                  <!--botoes na header da coluna-->
+                  <div style="float: right;">
+                    <!--
+                      << INICIO BOTAO ADD TAREFA NA HEADER
+                    -->
+                    <button @click="openModalCriacaoTarefa(projeto)" class="button is-success has-tooltip-bottom" data-tooltip="Adicionar tarefa">
+                      <span class="icon is-small">
+                        <i class="fa fa-plus"></i>
+                      </span>
+                    </button>
+                    <!--
+                      FIM BOTAO ADD TAREFA NA HEADER DE PROJETO >>
+                    -->
+
+
+                    <!--
+                      << INICIO BOTAO OPÇÕES (excluir, editar) NA HEADER DE PROJETO
+                    -->
+                    <div class="dropdown is-hoverable">
+                      <div class="dropdown-trigger">
+                        <button class="button is-success" aria-controls="dropdown-menu4">
+                          <span class="icon is-small">
+                            <i class="fa fa-caret-down"></i>
+                          </span>
+                        </button>
+                      </div>
+                      <div class="dropdown-menu" id="dropdown-menu4" role="menu">
+                        <div class="dropdown-content">
+                          <p class="dropdown-item has-text-centered has-text-weight-normal">
+                            Ações no projeto {{  projeto.name }}
+                          </p>
+                          <hr class="dropdown-divider">
+                          <a href="#" class="dropdown-item" @click="removeCard(projeto)">
+                            <i class="fa fa-check"></i> &nbsp Marcar como entregue
+                          </a>
+                          <a href="#" class="dropdown-item" @click="openModalEdicaoProjeto(projeto)">
+                            <i class="fa fa-pen"></i> &nbsp Editar Projeto
+                          </a>
+                          <a href="#" class="dropdown-item" @click="removeCard(projeto)">
+                            <i class="fa fa-trash"></i> &nbsp Excluir Projeto
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                    <!--
+                      FIM BOTAO OPÇÕES NA HEADER DE PROJETO >>
+                    -->
+
+                  </div>
+                  <!--
+                     FIM MENU HEADER PROJETO (add e opções)
+                  -->
+                </p>
+              </div>
+
+              <!-- corpo da coluna é o container das tarefas -->
+              <div class="message-body scrolls-limited-y">
+                <!-- toda tarefa é um 'item' -->
+                <div class="board-item">
+                  <!-- abaixo o vue assinala condicionalmente o conteudo do item -->
+                  <!--
+                    << INICIO LOOP TAREFAS NÃO ENTREGUES
+                  -->
+                  <div style="width:309px" class="board-item-content card-text" v-for="item in tarefasOrdenadas(projeto)" v-if="item.dt_entregue_br === null">
+                    <span>
+                      {{ item.titulo }}
+                      <div style="float: right;">
+                        <button @click="completeTask(projeto, item)" class="button is-success is-outlined has-tooltip-bottom" data-tooltip="Marcar como concluída">
+                          <span class="icon is-small">
+                            <i class="fa fa-check"></i>
+                          </span>
+                        </button>
+                        <button class="button is-outlined is-success has-tooltip-bottom" data-tooltip="Opções" @click="openModalEdicaoTarefa(item, projeto)">
+                          <span class="icon is-small">
+                            <i class="fa fa-caret-down"></i>
+                          </span>
+                        </button>
+                      </div>
+                    </span>
+                    <br>
+                    <span class="tag is-light">
+                      <i class="fa fa-clock" /></i>&nbsp {{ item.dt_previsao_br }}
+                    </span>
+                  </div>
+                  <!--
+                    FIM LOOP TAREFAS NÃO ENTREGUES >>
+                  -->
+
+                  <!--
+                    << INICIO LOOP TAREFAS ENTREGUES
+                  -->
+                  <div style="width:309px" class="board-item-content card-text" v-for="item in tarefasOrdenadas(projeto)" v-if="item.dt_entregue_br !== null">
+                    <span style="text-decoration: line-through;">
+                      {{ item.titulo }}
+
+                      <span style="float: right;" class="tag is-success">
+                        <i class="fa fa-flag-checkered" /></i>&nbsp
+                        {{ item.dt_entregue_br }}
+                      </span>
+                    </span>
+                  </div>
+                  <!--
+                     FIM LOOP TAREFAS ENTREGUES >>
+                  -->
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <!--
+            FIM LOOP PROJETOS
+          -->
+
+
+          <!--
+            << INICIO COLUNA CRIAR PROJETO
+            essa coluna inteira é o botão do modal
+          -->
+          <div class="column is-narrow modal-button" data-target="modal-card">
+            <article class="message is-success">
+              <div class="message-header" style="cursor: pointer;">
+                <p class="card-text">+ Criar projeto</p>
+              </div>
+            </article>
+          </div>
+          <!--
+             FIM COLUNA CRIAR PROJETO >>
+          -->
+        </div>
+      </section>
+
+      <!-- 
+        << INICIO MODAIS
+        todo: fazer ser só 1
+      -->
+
+      <div id="modal-card" class="modal">
+        <div class="modal-background">
+        </div>
+        <div class="modal-content is-tiny">
+          <!-- content -->
+          <div class="card">
+            <div class="card-content">
+              <div class="media">
+                <div class="media-content">
+                  <p class="title is-4">Criar projeto #1</p>
+                </div>
+              </div>
+              <div class="content">
+                <form id="f1" onsubmit="return false">
+                  <div class="field">
+                    <label class="label">Título</label>
+                    <div class="control">
+                      <input id="input-projeto-titulo" required class="input" type="text" placeholder="Digite o título do projeto">
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label class="label">Previsão de entrega</label>
+                    <div class="control">
+                      <input id="input-projeto-previsao" required class="input" type="date">
+                    </div>
+                  </div>
+                  <div class="field is-grouped">
+                    <div class="control">
+                      <button @click="createCard()" class="button is-success">Criar</button>
+                    </div>
+                    <div class="control">
+                      <button class="button is-light modal-button-close">Cancelar</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <!-- end content -->
+        </div>
+        <button class="modal-close is-large" aria-label="close"></button>
+      </div><!-- end tiny modal card -->
+      
+      <div id="create-task-modal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-content is-tiny">
+          <!-- content -->
+          <div class="card">
+            <div class="card-content">
+              <div class="media">
+                <div class="media-content" v-for="(prop, key) in selectedCard">
+                  <p class="title is-4" v-if="key === 'name'">Criar tarefa - {{prop}}</p>
+                </div>
+              </div>
+              <div class="content">
+                <form id="create-task-form" onsubmit="return false">
+                  <div class="field">
+                    <label class="label">Título</label>
+                    <div class="control">
+                      <input id="input-tarefa-titulo" required class="input" type="text" placeholder="Digite o título da tarefa">
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label class="label">Previsão de entrega</label>
+                    <div class="control">
+                      <input id="input-tarefa-previsao" required class="input" type="date">
+                    </div>
+                  </div>
+                  <div class="field is-grouped">
+                    <div class="control">
+                      <button @click="createTask()" class="button is-success">Criar</button>
+                    </div>
+                    <div class="control">
+                      <button class="button is-light modal-button-close">Cancelar</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <!-- end content -->
+        </div>
+        <button class="modal-close is-large" aria-label="close"></button>
+      </div><!-- end tiny modal card -->
+      
+      <div id="edit-projeto-modal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-content is-tiny">
+          <!-- content -->
+          <div class="card">
+            <div class="card-content">
+              <div class="media">
+                <div class="media-content" v-for="(prop, key) in selectedCard">
+                  <p class="title is-4" v-if="key === 'name'">Editar projeto {{prop}}</p>
+                </div>
+              </div>
+              <div class="content">
+                <form id="edit-projeto-form" onsubmit="return false">
+                  <div class="field">
+                    <label class="label">Título</label>
+                    <div class="control">
+                      <input id="edit-projeto-titulo" required class="input" type="text" placeholder="Digite o novo título do projeto">
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label class="label">Previsão de entrega</label>
+                    <div class="control">
+                      <input id="edit-projeto-previsao" required class="input" type="date">
+                    </div>
+                  </div>
+                  <div class="field is-grouped">
+                    <div class="control">
+                      <button @click="editProjeto()" class="button is-success">Salvar alterações</button>
+                    </div>
+                    <div class="control">
+                      <button class="button is-light modal-button-close">Cancelar</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <!-- end content -->
+        </div>
+        <button class="modal-close is-large" aria-label="close"></button>
+      </div><!-- end tiny modal card -->
+
+      <div id="edit-tarefa-modal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-content is-tiny">
+          <!-- content -->
+          <div class="card">
+            <div class="card-content">
+              <div class="media">
+                <div class="media-content" v-for="(prop, key) in selectedCard">
+                  <p class="title is-4" v-if="key === 'name'">Editar projeto {{prop}}</p>
+                </div>
+              </div>
+              <div class="content">
+                <form id="edit-tarefa-form" onsubmit="return false">
+                  <div class="field">
+                    <label class="label">Título</label>
+                    <div class="control">
+                      <input id="edit-tarefa-titulo" required class="input" type="text" placeholder="Digite o novo título da tarefa">
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label class="label">Previsão de entrega</label>
+                    <div class="control">
+                      <input id="edit-tarefa-previsao" required class="input" type="date">
+                    </div>
+                  </div>
+                  <div class="field is-grouped">
+                    <div class="control">
+                      <button @click="editTarefa()" class="button is-success">
+                        Salvar alterações
+                      </button>
+                    </div>
+                    <div class="control">
+                      <button class="button is-light modal-button-close">Cancelar</button>
+                    </div>
+                  </div>
+                  <div class="field is-grouped">
+                    <div class="control">
+                      <button @click="removeItem()" class="button is-danger">
+                        <i class="fa fa-trash"></i> &nbsp Excluir Tarefa
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <!-- end content -->
+        </div>
+        <button class="modal-close is-large" aria-label="close"></button>
+      </div><!-- end tiny modal card -->
+
+      <!-- 
+        << INICIO MODAIS
+      -->
+
+    </div>
+    <!-- 
+      fim root vue >>
+    -->
+      <footer>
+        <div class="box cta">
+          <div class="columns is-mobile is-centered">
+            <div class="field is-grouped is-grouped-multiline">
+              <div class="control">
+                <div class="tags has-addons">
+                  <span class="tag is-light">José Paulo - desafio Mateus </span>
+                  <a class="tag is-link" href="https://github.com/BulmaTemplates/bulma-templates">Licença MIT</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+      
+      
+      <script src="https://unpkg.com/vue"></script>
+      <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
+      <script src="plugins/moment/moment-with-locales.js"></script>
+      <script src="js/kanban.js"></script>
+      <script src="plugins/horizontal-scroll/horizontal-scroll.js"></script>
+      <script src="https://unpkg.com/bulma-modal-fx/dist/js/modal-fx.min.js"></script>
+      
+    </body>
+  </html>
